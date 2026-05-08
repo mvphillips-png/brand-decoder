@@ -470,31 +470,7 @@
   }
   .error-zone.active { display: block; }
 
-  /* ── HISTORY ── */
-  .history-strip {
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    padding-bottom: 6px;
-    margin-bottom: 20px;
-    scrollbar-width: none;
-  }
-  .history-strip::-webkit-scrollbar { display: none; }
-  .history-chip {
-    background: var(--surface);
-    border: 0.5px solid var(--border);
-    border-radius: 100px;
-    padding: 6px 14px;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--muted);
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-    font-family: var(--font-head);
-    transition: border-color 0.15s, color 0.15s;
-  }
-  .history-chip:active { border-color: var(--accent); color: var(--accent); }
+
 
   /* ── COMPARE ── */
   .compare-section {
@@ -553,9 +529,6 @@
 </header>
 
 <main class="main">
-
-  <!-- History chips (hidden initially) -->
-  <div class="history-strip" id="historyStrip" style="display:none"></div>
 
 
   <!-- About Block -->
