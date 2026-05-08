@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Brand Decoder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0c0c0e;
+    --surface: #141416;
+    --surface2: #1c1c1f;
+    --surface3: #242428;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0ede8;
+    --muted: #7a7875;
+    --accent: #e8d5a3;
+    --accent2: #b8a882;
+    --signal: #4ade80;
+    --signal-dim: rgba(74,222,128,0.12);
+    --warn: #f59e0b;
+    --warn-dim: rgba(245,158,11,0.12);
+    --danger: #f87171;
+    --danger-dim: rgba(248,113,113,0.12);
+    --blue: #60a5fa;
+    --blue-dim: rgba(96,165,250,0.12);
+    --purple: #a78bfa;
+    --purple-dim: rgba(167,139,250,0.12);
+    --radius: 10px;
+    --radius-lg: 16px;
+    --font-head: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-head);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  .app-header {
+    padding: 24px 20px 16px;
+    border-bottom: 0.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 50;
+    backdrop-filter: blur(12px);
+  }
+  .logo-mark {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .logo-mark svg { width: 20px; height: 20px; }
+  .app-title { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; color: var(--text); }
+  .app-sub { font-size: 11px; color: var(--muted); font-weight: 400; letter-spacing: 0.5px; text-transform: uppercase; font-family: var(--font-mono); }
+
+  /* ── MAIN ── */
+  .main { padding: 24px 20px; max-width: 600px; margin: 0 auto; }
+
+  /* ── INPUT ZONE ── */
+  .input-zone {
+    background: var(--surface);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .input-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    margin-bottom: 10px;
+    display: block;
+  }
+  .brand-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    font-size: 22px;
+    font-weight: 700;
+    font-family: var(--font-head);
+    color: var(--text);
+    outline: none;
+    letter-spacing: -0.5px;
+    transition: border-color 0.2s;
+  }
+  .brand-input::placeholder { color: var(--muted); font-weight: 400; }
+  .brand-input:focus { border-color: var(--accent); }
+
+  .context-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 14px;
+    font-family: var(--font-head);
+    color: var(--text);
+    outline: none;
+    margin-top: 10px;
+    resize: none;
+    line-height: 1.5;
+    transition: border-color 0.2s;
+  }
+  .context-input::placeholder { color: var(--muted); }
+  .context-input:focus { border-color: var(--accent2); }
+
+  .decode-btn {
+    margin-top: 14px;
+    width: 100%;
+    background: var(--accent);
+    color: #0c0c0e;
+    border: none;
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: var(--font-head);
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .decode-btn:active { transform: scale(0.98); opacity: 0.85; }
+  .decode-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .decode-btn svg { width: 18px; height: 18px; }
+
+  /* ── API KEY NOTICE ── */
+  .api-notice {
+    background: var(--warn-dim);
+    border: 0.5px solid var(--warn);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--warn);
+    font-family: var(--font-mono);
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+  .api-key-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .api-key-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--text);
+    outline: none;
+  }
+  .api-key-input:focus { border-color: var(--warn); }
+  .api-save-btn {
+    background: var(--warn);
+    color: #0c0c0e;
+    border: none;
+    border-radius: var(--radius);
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--font-head);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  /* ── LOADING ── */
+  .loading-zone {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .loading-zone.active { display: flex; }
+  .loading-bar-wrap {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .loading-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 1.2s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(0.7); }
+  }
+  .loading-label {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+  }
+  .loading-brand {
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* ── RESULTS ── */
+  .results { display: none; }
+  .results.active { display: block; }
+
+  .brand-header-result {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .brand-name-display {
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: var(--text);
+    line-height: 1.1;
+  }
+  .brand-tagline-display {
+    font-size: 14px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+  .brand-score-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .score-pill {
+    padding: 5px 12px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    letter-spacing: 0.3px;
+  }
+  .score-pill.strong { background: var(--signal-dim); color: var(--signal); }
+  .score-pill.weak { background: var(--danger-dim); color: var(--danger); }
+  .score-pill.mixed { background: var(--warn-dim); color: var(--warn); }
+  .score-pill.neutral { background: var(--surface2); color: var(--muted); }
+
+  /* ── SECTION CARDS ── */
+  .section-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .section-header {
+    padding: 16px 18px 12px;
+    border-bottom: 0.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-icon {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 14px;
+  }
+  .icon-blue { background: var(--blue-dim); color: var(--blue); }
+  .icon-purple { background: var(--purple-dim); color: var(--purple); }
+  .icon-amber { background: var(--warn-dim); color: var(--warn); }
+  .icon-green { background: var(--signal-dim); color: var(--signal); }
+  .icon-red { background: var(--danger-dim); color: var(--danger); }
+  .icon-accent { background: rgba(232,213,163,0.12); color: var(--accent); }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-family: var(--font-mono);
+    color: var(--text);
+  }
+  .section-body { padding: 16px 18px; }
+
+  /* ── SIGNAL ITEMS ── */
+  .signal-item {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+    align-items: flex-start;
+  }
+  .signal-item:last-child { margin-bottom: 0; }
+  .signal-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+  .dot-green { background: var(--signal); }
+  .dot-red { background: var(--danger); }
+  .dot-amber { background: var(--warn); }
+  .dot-blue { background: var(--blue); }
+  .dot-accent { background: var(--accent); }
+  .signal-text { font-size: 14px; line-height: 1.55; color: var(--text); }
+  .signal-label {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+    color: var(--muted);
+  }
+
+  /* ── GAP CARD ── */
+  .gap-card {
+    background: linear-gradient(135deg, rgba(232,213,163,0.06) 0%, rgba(232,213,163,0.02) 100%);
+    border: 0.5px solid rgba(232,213,163,0.2);
+    border-radius: var(--radius-lg);
+    margin-bottom: 14px;
+    padding: 20px;
+  }
+  .gap-label {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 8px;
+  }
+  .gap-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+    margin-bottom: 10px;
+    line-height: 1.2;
+  }
+  .gap-desc { font-size: 14px; color: var(--text); line-height: 1.6; }
+
+  /* ── TOUCHPOINT GRID ── */
+  .touchpoint-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .touchpoint-item {
+    background: var(--surface2);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    border: 0.5px solid var(--border);
+  }
+  .tp-label {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .tp-rating {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .tp-rating.strong { color: var(--signal); }
+  .tp-rating.weak { color: var(--danger); }
+  .tp-rating.mixed { color: var(--warn); }
+  .tp-rating.neutral { color: var(--muted); }
+  .tp-note { font-size: 12px; color: var(--muted); line-height: 1.4; font-family: var(--font-mono); }
+
+  /* ── QUOTE BLOCK ── */
+  .quote-block {
+    background: var(--surface2);
+    border-left: 2px solid var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 12px 14px;
+    margin: 12px 0;
+  }
+  .quote-text { font-size: 14px; color: var(--text); line-height: 1.6; font-style: italic; }
+  .quote-attr { font-size: 11px; color: var(--muted); font-family: var(--font-mono); margin-top: 6px; }
+
+  /* ── ACTIONS ── */
+  .action-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    margin-bottom: 32px;
+  }
+  .action-btn {
+    flex: 1;
+    background: var(--surface);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-head);
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .action-btn:active { background: var(--surface3); }
+  .action-btn.primary-action {
+    background: rgba(232,213,163,0.08);
+    border-color: rgba(232,213,163,0.2);
+    color: var(--accent);
+  }
+
+  /* ── ERROR ── */
+  .error-zone {
+    display: none;
+    background: var(--danger-dim);
+    border: 0.5px solid var(--danger);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--danger);
+    font-family: var(--font-mono);
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+  .error-zone.active { display: block; }
+
+  /* ── HISTORY ── */
+  .history-strip {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    margin-bottom: 20px;
+    scrollbar-width: none;
+  }
+  .history-strip::-webkit-scrollbar { display: none; }
+  .history-chip {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 100px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-family: var(--font-head);
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .history-chip:active { border-color: var(--accent); color: var(--accent); }
+
+  /* ── COMPARE ── */
+  .compare-section {
+    margin-top: 10px;
+  }
+
+  /* skeleton shimmer */
+  @keyframes shimmer {
+    0% { opacity: 0.3; }
+    50% { opacity: 0.7; }
+    100% { opacity: 0.3; }
+  }
+  .shimmer { animation: shimmer 1.5s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="logo-mark">
+    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M10 2L3 7V13L10 18L17 13V7L10 2Z" stroke="#0c0c0e" stroke-width="1.5" fill="none"/>
+      <path d="M10 6V14M6 8L14 12M14 8L6 12" stroke="#0c0c0e" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div>
+    <div class="app-title">Brand Decoder</div>
+    <div class="app-sub">Find the gap</div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- History chips (hidden initially) -->
+  <div class="history-strip" id="historyStrip" style="display:none"></div>
+
+  <!-- Input Zone -->
+  <div class="input-zone">
+    <span class="input-label">Brand Name</span>
+    <input
+      type="text"
+      class="brand-input"
+      id="brandInput"
+      placeholder="e.g. Patagonia"
+      autocomplete="off"
+      autocorrect="off"
+      spellcheck="false"
+    />
+    <textarea
+      class="context-input"
+      id="contextInput"
+      rows="2"
+      placeholder="Optional context: industry, competitors, angle you care about..."
+    ></textarea>
+    <button class="decode-btn" id="decodeBtn" onclick="runDecode()">
+      <svg viewBox="0 0 18 18" fill="none"><path d="M3 9h12M9 3l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Decode Brand
+    </button>
+  </div>
+
+  <!-- Error -->
+  <div class="error-zone" id="errorZone"></div>
+
+  <!-- Loading -->
+  <div class="loading-zone" id="loadingZone">
+    <div class="loading-bar-wrap">
+      <div class="loading-dot" style="animation-delay:0s"></div>
+      <div class="loading-label" id="loadingMsg">Mapping brand space for <span class="loading-brand" id="loadingBrand"></span>…</div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="resultsZone"></div>
+
+</main>
+
+<script>
+const STORAGE_KEY = 'bd_api_key';
+const HISTORY_KEY = 'bd_history';
+
+
+
+function init() {
+  loadHistory();
+}
+
+function loadHistory() {
+  const h = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+  const strip = document.getElementById('historyStrip');
+  if (h.length === 0) { strip.style.display = 'none'; return; }
+  strip.style.display = 'flex';
+  strip.innerHTML = h.slice(0, 8).map(name =>
+    `<div class="history-chip" onclick="quickLoad('${name.replace(/'/g,"\\'")}')">↺ ${name}</div>`
+  ).join('');
+}
+
+function quickLoad(name) {
+  document.getElementById('brandInput').value = name;
+  runDecode();
+}
+
+function addToHistory(name) {
+  let h = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+  h = [name, ...h.filter(n => n !== name)].slice(0, 10);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
+  loadHistory();
+}
+
+function setLoading(on, brand) {
+  document.getElementById('loadingZone').classList.toggle('active', on);
+  document.getElementById('decodeBtn').disabled = on;
+  if (brand) document.getElementById('loadingBrand').textContent = brand;
+  const msgs = ['Mapping brand space', 'Scanning visual identity', 'Decoding messaging', 'Finding the gap', 'Analyzing touch points'];
+  if (on) {
+    let i = 0;
+    window._loadInterval = setInterval(() => {
+      document.getElementById('loadingMsg').innerHTML = msgs[i % msgs.length] + ' for <span class="loading-brand">' + brand + '</span>…';
+      i++;
+    }, 2200);
+  } else {
+    clearInterval(window._loadInterval);
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorZone');
+  el.textContent = msg;
+  el.classList.add('active');
+}
+function clearError() {
+  document.getElementById('errorZone').classList.remove('active');
+}
+
+async function runDecode() {
+  const brand = document.getElementById('brandInput').value.trim();
+  const context = document.getElementById('contextInput').value.trim();
+  if (!brand) { showError('Enter a brand name to decode.'); return; }
+  clearError();
+  document.getElementById('resultsZone').classList.remove('active');
+  document.getElementById('resultsZone').innerHTML = '';
+  setLoading(true, brand);
+
+  const systemPrompt = `You are a senior brand strategist and creative director. You produce incisive, opinionated brand analysis. You decode brands with the precision of a strategist and the eye of a creative director. You are direct, insightful, and non-generic. You find what others miss.`;
+
+  const userPrompt = `Decode the brand: "${brand}"${context ? `\n\nContext from analyst: ${context}` : ''}
+
+Return ONLY valid JSON — no markdown fences, no commentary before or after. Use this exact structure:
+
+{
+  "brand": "${brand}",
+  "category": "one-line category description",
+  "overallSignal": "strong|mixed|weak",
+  "signalReason": "one punchy sentence on overall brand health",
+  "what": {
+    "coreOffering": "what they actually sell/do",
+    "positioningStatement": "how they position in the market",
+    "audienceThey claim": "who they say they're for",
+    "audienceTheyActuallyReach": "who they actually reach (may differ)"
+  },
+  "visual": {
+    "overall": "strong|mixed|weak",
+    "palette": "describe their color world and what it signals",
+    "typography": "describe their type choices and what it communicates",
+    "imagery": "describe their visual world and aesthetic",
+    "consistency": "strong|mixed|weak",
+    "standoutElement": "what's most memorable visually",
+    "weakness": "where the visual identity breaks down or contradicts itself"
+  },
+  "verbal": {
+    "overall": "strong|mixed|weak",
+    "tone": "describe their voice — 3-4 adjectives",
+    "dominantMessages": ["message 1", "message 2", "message 3"],
+    "taglineOrSlogan": "their tagline or how they summarize themselves",
+    "whatTheyNeverSay": "the elephant in the room — what they strategically avoid",
+    "tonalInconsistency": "where their voice contradicts itself"
+  },
+  "spaceTheyOccupy": {
+    "perceivedTerrain": "the conceptual territory they own in customer minds",
+    "emotionalRegisters": ["emotion1", "emotion2", "emotion3"],
+    "competitiveLandmark": "the brand they are most often compared to or competing with",
+    "brandArchetype": "which archetype are they playing (Hero, Sage, Outlaw, etc.)"
+  },
+  "touchpoints": [
+    {"name": "Visual Identity", "rating": "strong|mixed|weak", "note": "12 words max"},
+    {"name": "Website", "rating": "strong|mixed|weak", "note": "12 words max"},
+    {"name": "Social Media", "rating": "strong|mixed|weak", "note": "12 words max"},
+    {"name": "Messaging", "rating": "strong|mixed|weak", "note": "12 words max"},
+    {"name": "Packaging / Product", "rating": "strong|mixed|weak", "note": "12 words max"},
+    {"name": "Customer Experience", "rating": "strong|mixed|weak", "note": "12 words max"}
+  ],
+  "contradictions": [
+    "Brand contradiction 1 — specific and sharp",
+    "Brand contradiction 2 — specific and sharp",
+    "Brand contradiction 3 — specific and sharp"
+  ],
+  "workingWell": [
+    "What is genuinely working for this brand — specific",
+    "Second thing working well — specific",
+    "Third thing working well — specific"
+  ],
+  "workingAgainstItself": [
+    "What actively undermines the brand — specific",
+    "Second self-defeating element — specific"
+  ],
+  "whiteSpace": {
+    "gapTitle": "short punchy title for the opportunity gap (5 words max)",
+    "gapDescription": "2-3 sentence description of the white space a challenger or evolved version of this brand could own. Be specific about what territory, emotion, or audience is unclaimed.",
+    "howToOwn": "concrete suggestion for how to claim this space"
+  },
+  "verdictLine": "One final devastating/insightful line about this brand — the thing a great strategist would say that captures it all"
+}`;
+
+  try {
+    const resp = await fetch('https://gravificer-proxy.mvphillips.workers.dev/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }]
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error?.message || `API error ${resp.status}`);
+    }
+
+    const data = await resp.json();
+    const raw = data.content?.[0]?.text || '';
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const result = JSON.parse(clean);
+    addToHistory(brand);
+    renderResults(result);
+  } catch(e) {
+    showError('Error: ' + e.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+function ratingClass(r) {
+  if (r === 'strong') return 'strong';
+  if (r === 'weak') return 'weak';
+  return 'mixed';
+}
+function dotColor(r) {
+  if (r === 'strong') return 'dot-green';
+  if (r === 'weak') return 'dot-red';
+  return 'dot-amber';
+}
+
+function renderResults(d) {
+  const zone = document.getElementById('resultsZone');
+
+  zone.innerHTML = `
+    <!-- Brand Header -->
+    <div class="brand-header-result">
+      <div class="brand-name-display">${escHtml(d.brand)}</div>
+      <div class="brand-tagline-display">${escHtml(d.category)}</div>
+      <div class="brand-score-row">
+        <span class="score-pill ${ratingClass(d.overallSignal)}">${d.overallSignal.toUpperCase()} BRAND</span>
+        <span class="score-pill neutral">${escHtml(d.spaceTheyOccupy?.brandArchetype || '')}</span>
+      </div>
+      <div style="margin-top:12px; font-size:14px; color:var(--muted); line-height:1.5; font-style:italic;">"${escHtml(d.signalReason)}"</div>
+    </div>
+
+    <!-- THE GAP — featured first -->
+    <div class="gap-card">
+      <div class="gap-label">⬡ White Space Opportunity</div>
+      <div class="gap-title">${escHtml(d.whiteSpace?.gapTitle || 'The Gap')}</div>
+      <div class="gap-desc">${escHtml(d.whiteSpace?.gapDescription || '')}</div>
+      ${d.whiteSpace?.howToOwn ? `<div class="quote-block" style="margin-top:12px"><div class="quote-text">${escHtml(d.whiteSpace.howToOwn)}</div><div class="quote-attr">HOW TO OWN IT</div></div>` : ''}
+    </div>
+
+    <!-- What They Do -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon icon-blue">◈</div>
+        <span class="section-title">What They Do</span>
+      </div>
+      <div class="section-body">
+        <div class="signal-item"><div class="signal-dot dot-blue"></div><div><div class="signal-label">Core Offering</div><div class="signal-text">${escHtml(d.what?.coreOffering || '')}</div></div></div>
+        <div class="signal-item"><div class="signal-dot dot-blue"></div><div><div class="signal-label">Positioning</div><div class="signal-text">${escHtml(d.what?.positioningStatement || '')}</div></div></div>
+        <div class="signal-item"><div class="signal-dot dot-amber"></div><div><div class="signal-label">Claimed Audience</div><div class="signal-text">${escHtml(d.what?.['audienceThey claim'] || '')}</div></div></div>
+        <div class="signal-item"><div class="signal-dot dot-accent"></div><div><div class="signal-label">Actual Audience</div><div class="signal-text">${escHtml(d.what?.audienceTheyActuallyReach || '')}</div></div></div>
+      </div>
+    </div>
+
+    <!-- Space They Occupy -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon icon-purple">◉</div>
+        <span class="section-title">Space They Occupy</span>
+      </div>
+      <div class="section-body">
+        <div class="signal-item"><div class="signal-dot dot-accent"></div><div><div class="signal-label">Perceived Terrain</div><div class="signal-text">${escHtml(d.spaceTheyOccupy?.perceivedTerrain || '')}</div></div></div>
+        <div style="margin-top:12px">
+          <div class="signal-label">Emotional Registers</div>
+          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px">
+            ${(d.spaceTheyOccupy?.emotionalRegisters || []).map(e => `<span style="background:var(--surface2);border:0.5px solid var(--border2);border-radius:100px;padding:4px 10px;font-size:12px;color:var(--text);font-family:var(--font-mono)">${escHtml(e)}</span>`).join('')}
+          </div>
+        </div>
+        <div class="signal-item" style="margin-top:12px"><div class="signal-dot dot-red"></div><div><div class="signal-label">Main Competitor</div><div class="signal-text">${escHtml(d.spaceTheyOccupy?.competitiveLandmark || '')}</div></div></div>
+      </div>
+    </div>
+
+    <!-- Visual Identity -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon icon-accent">◇</div>
+        <span class="section-title">Visual Identity <span style="color:var(--${ratingClass(d.visual?.overall) === 'strong' ? 'signal' : ratingClass(d.visual?.overall) === 'weak' ? 'danger' : 'warn'});font-size:11px;font-family:var(--font-mono);font-weight:600;margin-left:6px">${(d.visual?.overall || '').toUpperCase()}</span></span>
+      </div>
+      <div class="section-body">
+        <div class="signal-item"><div class="signal-dot dot-accent"></div><div><div class="signal-label">Color</div><div class="signal-text">${escHtml(d.visual?.palette || '')}</div></div></div>
+        <div class="signal-item"><div class="signal-dot dot-accent"></div><div><div class="signal-label">Typography</div><div class="signal-text">${escHtml(d.visual?.typography || '')}</div></div></div>
+        <div class="signal-item"><div class="signal-dot dot-accent"></div><div><div class="signal-label">Imagery</div><div class="signal-text">${escHtml(d.visual?.imagery || '')}</div></div></div>
+        <div class="signal-item"><div class="signal-dot dot-green"></div><div><div class="signal-label">Standout Element</div><div class="signal-text">${escHtml(d.visual?.standoutElement || '')}</div></div></div>
+        <div class="signal-item"><div class="signal-dot dot-red"></div><div><div class="signal-label">Visual Weakness</div><div class="signal-text">${escHtml(d.visual?.weakness || '')}</div></div></div>
+      </div>
+    </div>
+
+    <!-- Verbal Identity -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon icon-purple">◎</div>
+        <span class="section-title">Verbal Identity <span style="color:var(--${ratingClass(d.verbal?.overall) === 'strong' ? 'signal' : ratingClass(d.verbal?.overall) === 'weak' ? 'danger' : 'warn'});font-size:11px;font-family:var(--font-mono);font-weight:600;margin-left:6px">${(d.verbal?.overall || '').toUpperCase()}</span></span>
+      </div>
+      <div class="section-body">
+        <div class="signal-item"><div class="signal-dot dot-blue"></div><div><div class="signal-label">Tone</div><div class="signal-text">${escHtml(d.verbal?.tone || '')}</div></div></div>
+        <div style="margin-bottom:12px">
+          <div class="signal-label">Dominant Messages</div>
+          ${(d.verbal?.dominantMessages || []).map((m,i) => `<div style="display:flex;gap:8px;align-items:flex-start;margin-top:6px"><div style="color:var(--muted);font-family:var(--font-mono);font-size:12px;flex-shrink:0;margin-top:1px">${i+1}.</div><div style="font-size:14px;line-height:1.5">${escHtml(m)}</div></div>`).join('')}
+        </div>
+        ${d.verbal?.taglineOrSlogan ? `<div class="quote-block"><div class="quote-text">${escHtml(d.verbal.taglineOrSlogan)}</div><div class="quote-attr">TAGLINE / HOW THEY SUMMARIZE THEMSELVES</div></div>` : ''}
+        <div class="signal-item" style="margin-top:12px"><div class="signal-dot dot-amber"></div><div><div class="signal-label">What They Never Say</div><div class="signal-text">${escHtml(d.verbal?.whatTheyNeverSay || '')}</div></div></div>
+        <div class="signal-item"><div class="signal-dot dot-red"></div><div><div class="signal-label">Tonal Inconsistency</div><div class="signal-text">${escHtml(d.verbal?.tonalInconsistency || '')}</div></div></div>
+      </div>
+    </div>
+
+    <!-- Touch Points -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon icon-blue">⬡</div>
+        <span class="section-title">Touch Points</span>
+      </div>
+      <div class="section-body">
+        <div class="touchpoint-grid">
+          ${(d.touchpoints || []).map(tp => `
+            <div class="touchpoint-item">
+              <div class="tp-label">${escHtml(tp.name)}</div>
+              <div class="tp-rating ${ratingClass(tp.rating)}">${(tp.rating || '').toUpperCase()}</div>
+              <div class="tp-note">${escHtml(tp.note)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- Working Well / Against Itself -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon icon-green">◆</div>
+        <span class="section-title">Working For / Against</span>
+      </div>
+      <div class="section-body">
+        <div style="margin-bottom:14px">
+          <div class="signal-label" style="color:var(--signal);margin-bottom:8px">Working Well</div>
+          ${(d.workingWell || []).map(w => `<div class="signal-item"><div class="signal-dot dot-green"></div><div class="signal-text">${escHtml(w)}</div></div>`).join('')}
+        </div>
+        <div>
+          <div class="signal-label" style="color:var(--danger);margin-bottom:8px">Working Against Itself</div>
+          ${(d.workingAgainstItself || []).map(w => `<div class="signal-item"><div class="signal-dot dot-red"></div><div class="signal-text">${escHtml(w)}</div></div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- Contradictions -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon icon-red">⊗</div>
+        <span class="section-title">Brand Contradictions</span>
+      </div>
+      <div class="section-body">
+        ${(d.contradictions || []).map(c => `<div class="signal-item"><div class="signal-dot dot-amber"></div><div class="signal-text">${escHtml(c)}</div></div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Verdict -->
+    <div style="margin-top:20px; padding:20px; background:var(--surface); border:0.5px solid var(--border2); border-radius:var(--radius-lg); margin-bottom:4px;">
+      <div class="signal-label" style="margin-bottom:8px">Strategist's Verdict</div>
+      <div style="font-size:17px; font-weight:600; line-height:1.5; color:var(--text); letter-spacing:-0.2px;">"${escHtml(d.verdictLine)}"</div>
+    </div>
+
+    <!-- Actions -->
+    <div class="action-row">
+      <button class="action-btn" onclick="saveReport()">↓ Save</button>
+      <button class="action-btn primary-action" onclick="decodeAnother()">+ New Brand</button>
+    </div>
+
+  `;
+
+  zone.classList.add('active');
+  window._lastResult = d;
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function decodeAnother() {
+  document.getElementById('brandInput').value = '';
+  document.getElementById('contextInput').value = '';
+  document.getElementById('resultsZone').classList.remove('active');
+  document.getElementById('resultsZone').innerHTML = '';
+  document.getElementById('brandInput').focus();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function saveReport() {
+  if (!window._lastResult) return;
+  const d = window._lastResult;
+  const lines = [
+    `BRAND DECODER — ${d.brand.toUpperCase()}`,
+    `${'='.repeat(50)}`,
+    `Category: ${d.category}`,
+    `Overall Signal: ${d.overallSignal.toUpperCase()}`,
+    `Signal: ${d.signalReason}`,
+    ``,
+    `WHITE SPACE: ${d.whiteSpace?.gapTitle}`,
+    d.whiteSpace?.gapDescription,
+    `How to own: ${d.whiteSpace?.howToOwn}`,
+    ``,
+    `WHAT THEY DO`,
+    `Offering: ${d.what?.coreOffering}`,
+    `Positioning: ${d.what?.positioningStatement}`,
+    ``,
+    `VISUAL (${d.visual?.overall})`,
+    `Color: ${d.visual?.palette}`,
+    `Type: ${d.visual?.typography}`,
+    `Standout: ${d.visual?.standoutElement}`,
+    `Weakness: ${d.visual?.weakness}`,
+    ``,
+    `VERBAL (${d.verbal?.overall})`,
+    `Tone: ${d.verbal?.tone}`,
+    `What they never say: ${d.verbal?.whatTheyNeverSay}`,
+    ``,
+    `CONTRADICTIONS`,
+    ...(d.contradictions || []).map((c,i) => `${i+1}. ${c}`),
+    ``,
+    `VERDICT: "${d.verdictLine}"`,
+    ``,
+    `Decoded by Brand Decoder — ${new Date().toLocaleDateString()}`
+  ].join('\n');
+
+  const blob = new Blob([lines], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${d.brand.toLowerCase().replace(/\s+/g,'-')}-brand-decode.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Enter key support
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  document.getElementById('brandInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') runDecode();
+  });
+});
+</script>
+
+</body>
+</html>
