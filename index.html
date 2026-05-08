@@ -689,104 +689,69 @@ async function runDecode() {
   document.getElementById('resultsZone').innerHTML = '';
   setLoading(true, brand);
 
-  // Extract the outermost JSON object from any string
   function extractJSON(str) {
     const s = str.replace(/```json/gi,'').replace(/```/g,'').trim();
-    let depth=0, start=-1, end=-1;
-    for(let i=0;i<s.length;i++){
-      if(s[i]==='{'){if(start===-1)start=i;depth++;}
-      else if(s[i]==='}'){depth--;if(depth===0&&start!==-1){end=i;break;}}
+    let depth = 0, start = -1, end = -1;
+    for (let i = 0; i < s.length; i++) {
+      if (s[i] === '{') { if (start === -1) start = i; depth++; }
+      else if (s[i] === '}') { depth--; if (depth === 0 && start !== -1) { end = i; break; } }
     }
-    return (start===-1||end===-1) ? null : s.slice(start,end+1);
+    return (start === -1 || end === -1) ? null : s.slice(start, end + 1);
   }
 
-  // Sanitise common JSON mistakes Claude makes in string values
-  function sanitiseJSON(str) {
-    // Remove em-dashes that break JSON when unquoted
-    // Fix unescaped quotes inside string values by using a parse-and-rebuild approach
+  function fixJSON(str) {
+    // Try as-is first
     try { JSON.parse(str); return str; } catch(e) {}
-    // Replace smart quotes with straight quotes
-    let s = str.replace(/[‘’]/g,"'").replace(/[“”]/g,'"');
-    // Remove any literal newlines inside string values
-    s = s.replace(/"([^"]*)"/g, (_,v) => '"' + v.replace(/
-/g,' ').replace(/
-/g,'') + '"');
+    // Replace curly/smart quotes with straight equivalents
+    let s = str
+      .replace(/\u2018|\u2019/g, "'")
+      .replace(/\u201C|\u201D/g, '"')
+      .replace(/\u2014/g, '-')
+      .replace(/\u2013/g, '-');
+    try { JSON.parse(s); return s; } catch(e) {}
     return s;
   }
 
-  const prompt = `You are a senior brand strategist and creative director. Analyze the brand: "${brand}"${context ? '. Analyst context: ' + context : ''}.
+  const schema = '{'
+    + '"brand":"' + brand + '",'
+    + '"category":"specific one-line category e.g. Outdoor gear retailer and co-op",'
+    + '"overallSignal":"strong",'
+    + '"signalReason":"one sharp sentence specific to this brand",'
+    + '"what":{"coreOffering":"specific","positioningStatement":"specific","audienceThey claim":"specific","audienceTheyActuallyReach":"specific"},'
+    + '"visual":{"overall":"strong","palette":"Name exact colors with hex codes e.g. Strathmore Green #5E8F32 and white","typography":"Name actual typefaces e.g. Custom condensed wordmark Gotham body","imagery":"specific photo style and subjects","consistency":"strong","standoutElement":"single most distinctive element","weakness":"specific visual weakness"},'
+    + '"verbal":{"overall":"strong","tone":"3-4 specific adjectives","dominantMessages":["real message","real message","real message"],"taglineOrSlogan":"Their actual tagline","whatTheyNeverSay":"specific strategic avoidance","tonalInconsistency":"specific voice contradiction"},'
+    + '"spaceTheyOccupy":{"perceivedTerrain":"specific territory in customer minds","emotionalRegisters":["emotion","emotion","emotion"],"competitiveLandmark":"primary competitor","brandArchetype":"e.g. Caregiver"},'
+    + '"touchpoints":['
+    +   '{"name":"Visual Identity","rating":"strong","note":"specific under 12 words"},'
+    +   '{"name":"Website","rating":"mixed","note":"specific under 12 words"},'
+    +   '{"name":"Social Media","rating":"mixed","note":"specific under 12 words"},'
+    +   '{"name":"Messaging","rating":"strong","note":"specific under 12 words"},'
+    +   '{"name":"Packaging / Product","rating":"strong","note":"specific under 12 words"},'
+    +   '{"name":"Customer Experience","rating":"strong","note":"specific under 12 words"}'
+    + '],'
+    + '"contradictions":["specific contradiction","specific contradiction","specific contradiction"],'
+    + '"workingWell":["specific strength","specific strength","specific strength"],'
+    + '"workingAgainstItself":["specific weakness","specific weakness"],'
+    + '"whiteSpace":{"gapTitle":"5 words max","gapDescription":"2-3 sentences on unclaimed territory","howToOwn":"concrete suggestion"},'
+    + '"verdictLine":"one devastating strategist line"'
+    + '}';
 
-You have deep knowledge of real brand identities. Use it. Be specific:
-- Name ACTUAL hex color codes (e.g. REI uses #5E8F32 green, Publix uses #1A6837 green)
-- Name ACTUAL typefaces (e.g. "custom condensed sans-serif wordmark", "Helvetica Neue body copy")
-- Use REAL taglines and campaign names
-- Give SPECIFIC, sharp strategic observations — not generic descriptions
-
-Return a single JSON object. YOUR ENTIRE RESPONSE MUST BE ONLY THE JSON — no intro, no explanation, no markdown fences. Start your response with { and end with }.
-
-{
-  "brand": "${brand}",
-  "category": "specific one-line category",
-  "overallSignal": "strong",
-  "signalReason": "one sharp sentence on overall brand health — specific to this brand",
-  "what": {
-    "coreOffering": "what they actually sell or do — specific",
-    "positioningStatement": "how they position themselves — specific",
-    "audienceThey claim": "who they claim to be for — specific",
-    "audienceTheyActuallyReach": "who actually shops or engages — may differ"
-  },
-  "visual": {
-    "overall": "strong",
-    "palette": "Name exact colors and hex codes. E.g.: Signature forest green (#1A6837), white, and gold accent — communicates trust and freshness",
-    "typography": "Name actual fonts. E.g.: Custom rounded sans-serif wordmark, Proxima Nova for body — approachable and modern",
-    "imagery": "Describe the specific visual world — photography style, subjects, mood",
-    "consistency": "strong",
-    "standoutElement": "The single most distinctive visual element",
-    "weakness": "Specific visual weakness or inconsistency"
-  },
-  "verbal": {
-    "overall": "strong",
-    "tone": "3-4 specific adjectives describing voice",
-    "dominantMessages": ["real message they repeat", "second real message", "third real message"],
-    "taglineOrSlogan": "Their actual current tagline",
-    "whatTheyNeverSay": "What they strategically avoid saying — specific",
-    "tonalInconsistency": "Where their voice contradicts itself — specific"
-  },
-  "spaceTheyOccupy": {
-    "perceivedTerrain": "The conceptual territory they own in customer minds",
-    "emotionalRegisters": ["specific emotion", "specific emotion", "specific emotion"],
-    "competitiveLandmark": "Their primary competitor",
-    "brandArchetype": "Archetype they embody — e.g. Caregiver, Hero, Outlaw"
-  },
-  "touchpoints": [
-    {"name": "Visual Identity", "rating": "strong", "note": "sharp specific observation under 12 words"},
-    {"name": "Website", "rating": "mixed", "note": "sharp specific observation under 12 words"},
-    {"name": "Social Media", "rating": "mixed", "note": "sharp specific observation under 12 words"},
-    {"name": "Messaging", "rating": "strong", "note": "sharp specific observation under 12 words"},
-    {"name": "Packaging / Product", "rating": "strong", "note": "sharp specific observation under 12 words"},
-    {"name": "Customer Experience", "rating": "strong", "note": "sharp specific observation under 12 words"}
-  ],
-  "contradictions": [
-    "Specific contradiction baked into this brand",
-    "Second specific contradiction",
-    "Third specific contradiction"
-  ],
-  "workingWell": [
-    "Specific thing genuinely working for this brand",
-    "Second specific thing working well",
-    "Third specific thing working well"
-  ],
-  "workingAgainstItself": [
-    "Specific thing actively undermining the brand",
-    "Second self-defeating element"
-  ],
-  "whiteSpace": {
-    "gapTitle": "Punchy gap name — 5 words max",
-    "gapDescription": "2-3 sentences on the unclaimed territory. Specific about what emotion, audience, or positioning is open.",
-    "howToOwn": "Concrete suggestion for how to claim this space"
-  },
-  "verdictLine": "One devastating/insightful line that captures the whole brand — what a great strategist would say"
-}`;
+  const userMsg = 'You are a senior brand strategist. Analyze the brand: "' + brand + '"'
+    + (context ? '. Additional context: ' + context : '') + '.\n\n'
+    + 'Use your knowledge to provide SPECIFIC details:\n'
+    + '- Exact hex color codes (not just color names)\n'
+    + '- Actual font/typeface names used in their identity\n'
+    + '- Real current tagline\n'
+    + '- Sharp, specific strategic observations\n\n'
+    + 'OUTPUT RULES — follow exactly:\n'
+    + '1. Your entire response is ONE JSON object only\n'
+    + '2. No text before the opening brace\n'
+    + '3. No text after the closing brace\n'
+    + '4. No markdown, no code fences, no explanation\n'
+    + '5. All rating fields must be exactly: "strong", "mixed", or "weak"\n'
+    + '6. Every value must be a properly quoted JSON string or array\n\n'
+    + 'Use this exact schema, replacing placeholder text with real analysis:\n'
+    + schema;
 
   try {
     const resp = await fetch('https://gravificer-proxy.mvphillips.workers.dev/', {
@@ -795,22 +760,24 @@ Return a single JSON object. YOUR ENTIRE RESPONSE MUST BE ONLY THE JSON — no i
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 2500,
-        messages: [{ role: 'user', content: prompt }]
+        messages: [{ role: 'user', content: userMsg }]
       })
     });
 
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
-      throw new Error(err.error?.message || `API error ${resp.status}`);
+      throw new Error(err.error?.message || 'API error ' + resp.status);
     }
 
     const data = await resp.json();
     const raw = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
-    const jsonStr = extractJSON(raw);
-    if (!jsonStr) throw new Error('No JSON found in response — please try again.');
+    if (!raw) throw new Error('Empty response from API. Please try again.');
 
-    const sanitised = sanitiseJSON(jsonStr);
-    const result = JSON.parse(sanitised);
+    const jsonStr = extractJSON(raw);
+    if (!jsonStr) throw new Error('Could not find JSON in response. Please try again.');
+
+    const fixed = fixJSON(jsonStr);
+    const result = JSON.parse(fixed);
     addToHistory(brand);
     renderResults(result);
   } catch(e) {
@@ -819,6 +786,8 @@ Return a single JSON object. YOUR ENTIRE RESPONSE MUST BE ONLY THE JSON — no i
     setLoading(false);
   }
 }
+
+
 
 function ratingClass(r) {
   if (r === 'strong') return 'strong';
