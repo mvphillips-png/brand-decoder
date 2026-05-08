@@ -689,89 +689,11 @@ async function runDecode() {
   document.getElementById('resultsZone').innerHTML = '';
   setLoading(true, brand);
 
-  const systemPrompt = `You are a senior brand strategist and creative director with deep visual literacy. Before analyzing any brand, you use web search to look up the brand's current website, brand guidelines, logo, color palette, typography, and recent campaigns. You cite specific, real details — actual hex colors, real font names, specific campaign names, real taglines. You NEVER give generic answers like "they use bold colors" or "clean sans-serif typography." Every visual observation must be specific and grounded in what the brand actually looks like right now. You are direct, opinionated, and find what others miss.`;
-
-  const userPrompt = `You have web search available. Before writing your analysis, search for:
-1. "${brand} brand colors hex" or "${brand} brand guidelines"
-2. "${brand} logo typography font"
-3. "${brand} website 2025" or "${brand} brand identity"
-4. "${brand} tagline slogan"
-
-Use what you find to give SPECIFIC, ACCURATE visual details — real color names/hex codes, actual font names, real campaign names. Do not guess or generalize.${context ? '\n\nAnalyst context: ' + context : ''}
-
-Decode the brand: "${brand}"
-
-Return ONLY valid JSON — no markdown fences, no commentary before or after. Use this exact structure:
-
-{
-  "brand": "${brand}",
-  "category": "one-line category description",
-  "overallSignal": "strong|mixed|weak",
-  "signalReason": "one punchy sentence on overall brand health",
-  "what": {
-    "coreOffering": "what they actually sell/do",
-    "positioningStatement": "how they position in the market",
-    "audienceThey claim": "who they say they're for",
-    "audienceTheyActuallyReach": "who they actually reach (may differ)"
-  },
-  "visual": {
-    "overall": "strong|mixed|weak",
-    "palette": "describe their color world and what it signals",
-    "typography": "describe their type choices and what it communicates",
-    "imagery": "describe their visual world and aesthetic",
-    "consistency": "strong|mixed|weak",
-    "standoutElement": "what's most memorable visually",
-    "weakness": "where the visual identity breaks down or contradicts itself"
-  },
-  "verbal": {
-    "overall": "strong|mixed|weak",
-    "tone": "describe their voice — 3-4 adjectives",
-    "dominantMessages": ["message 1", "message 2", "message 3"],
-    "taglineOrSlogan": "their tagline or how they summarize themselves",
-    "whatTheyNeverSay": "the elephant in the room — what they strategically avoid",
-    "tonalInconsistency": "where their voice contradicts itself"
-  },
-  "spaceTheyOccupy": {
-    "perceivedTerrain": "the conceptual territory they own in customer minds",
-    "emotionalRegisters": ["emotion1", "emotion2", "emotion3"],
-    "competitiveLandmark": "the brand they are most often compared to or competing with",
-    "brandArchetype": "which archetype are they playing (Hero, Sage, Outlaw, etc.)"
-  },
-  "touchpoints": [
-    {"name": "Visual Identity", "rating": "strong|mixed|weak", "note": "12 words max"},
-    {"name": "Website", "rating": "strong|mixed|weak", "note": "12 words max"},
-    {"name": "Social Media", "rating": "strong|mixed|weak", "note": "12 words max"},
-    {"name": "Messaging", "rating": "strong|mixed|weak", "note": "12 words max"},
-    {"name": "Packaging / Product", "rating": "strong|mixed|weak", "note": "12 words max"},
-    {"name": "Customer Experience", "rating": "strong|mixed|weak", "note": "12 words max"}
-  ],
-  "contradictions": [
-    "Brand contradiction 1 — specific and sharp",
-    "Brand contradiction 2 — specific and sharp",
-    "Brand contradiction 3 — specific and sharp"
-  ],
-  "workingWell": [
-    "What is genuinely working for this brand — specific",
-    "Second thing working well — specific",
-    "Third thing working well — specific"
-  ],
-  "workingAgainstItself": [
-    "What actively undermines the brand — specific",
-    "Second self-defeating element — specific"
-  ],
-  "whiteSpace": {
-    "gapTitle": "short punchy title for the opportunity gap (5 words max)",
-    "gapDescription": "2-3 sentence description of the white space a challenger or evolved version of this brand could own. Be specific about what territory, emotion, or audience is unclaimed.",
-    "howToOwn": "concrete suggestion for how to claim this space"
-  },
-  "verdictLine": "One final devastating/insightful line about this brand — the thing a great strategist would say that captures it all"
-}`;
-
-  async function callAPI(messages, useSearch) {
+  // ── CALL HELPER ──
+  async function callAPI(messages, useSearch, maxTokens) {
     const body = {
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 3000,
-      system: systemPrompt,
+      max_tokens: maxTokens || 2000,
       messages
     };
     if (useSearch) body.tools = [{ type: 'web_search_20250305', name: 'web_search' }];
@@ -787,13 +709,12 @@ Return ONLY valid JSON — no markdown fences, no commentary before or after. Us
     return resp.json();
   }
 
-  function extractJSON(data) {
-    // Collect all text blocks (web search may interleave tool_use blocks)
-    const textBlocks = (data.content || []).filter(b => b.type === 'text');
-    const raw = textBlocks.map(b => b.text).join('\n');
-    // Strip markdown code fences
-    const stripped = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
-    // Find the outermost { ... } — handles trailing text after JSON
+  function getText(data) {
+    return (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+  }
+
+  function extractJSON(str) {
+    const stripped = str.replace(/```json/gi, '').replace(/```/g, '').trim();
     let depth = 0, start = -1, end = -1;
     for (let i = 0; i < stripped.length; i++) {
       if (stripped[i] === '{') { if (start === -1) start = i; depth++; }
@@ -804,23 +725,132 @@ Return ONLY valid JSON — no markdown fences, no commentary before or after. Us
   }
 
   try {
-    // Pass 1: web search enabled for research
-    const data1 = await callAPI([{ role: 'user', content: userPrompt }], true);
-    let jsonStr = extractJSON(data1);
+    // ── PASS 1: Research with web search — prose output only ──
+    const researchPrompt = `You are a senior brand researcher. Use web search to gather specific, accurate facts about the brand "${brand}".${context ? ' Analyst context: ' + context : ''}
 
-    // Pass 2: if no clean JSON, send a strict cleanup request
-    if (!jsonStr) {
-      const rawText = (data1.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
-      const data2 = await callAPI([
-        { role: 'user', content: userPrompt },
-        { role: 'assistant', content: data1.content },
-        { role: 'user', content: 'Your response contained text outside the JSON object. Return ONLY the raw JSON object — no explanation, no markdown, no text before or after. Start your response with { and end with }.' }
-      ], false);
-      jsonStr = extractJSON(data2);
+Search for:
+- "${brand} brand colors" and "${brand} hex color palette"
+- "${brand} font typography logo"
+- "${brand} tagline slogan brand identity"
+- "${brand} brand guidelines visual identity"
+- "${brand} marketing campaigns advertising"
+
+Write a detailed research brief covering:
+1. VISUAL IDENTITY: Exact colors (with hex codes if found), specific font/typeface names, logo description, imagery style
+2. VERBAL IDENTITY: Real tagline, tone of voice, key messages they repeat
+3. MARKET POSITION: What space they occupy, who they target, their main competitor
+4. BRAND HEALTH: What's working, what's inconsistent or self-defeating
+5. WHITE SPACE: What territory or audience is unclaimed that a challenger could own
+
+Be specific. Name real colors, real fonts, real campaigns. No generalities.`;
+
+    const data1 = await callAPI([{ role: 'user', content: researchPrompt }], true, 2000);
+    const researchBrief = getText(data1);
+
+    if (!researchBrief) throw new Error('Research pass returned no content. Please try again.');
+
+    // ── PASS 2: Convert research brief to strict JSON — no tools ──
+    const jsonSchema = `{
+  "brand": "${brand}",
+  "category": "one-line category e.g. Regional grocery chain, Southeast US",
+  "overallSignal": "strong",
+  "signalReason": "one punchy sentence — specific to this brand",
+  "what": {
+    "coreOffering": "specific description",
+    "positioningStatement": "specific positioning",
+    "audienceThey claim": "specific claimed audience",
+    "audienceTheyActuallyReach": "specific actual audience"
+  },
+  "visual": {
+    "overall": "strong",
+    "palette": "SPECIFIC colors — e.g. deep forest green (#1a5c2a) and white, signals fresh/trustworthy",
+    "typography": "SPECIFIC font names — e.g. custom serif wordmark with clean sans-serif body copy",
+    "imagery": "specific description of their visual world",
+    "consistency": "strong",
+    "standoutElement": "specific most memorable element",
+    "weakness": "specific visual weakness"
+  },
+  "verbal": {
+    "overall": "strong",
+    "tone": "3-4 specific adjectives",
+    "dominantMessages": ["specific message 1", "specific message 2", "specific message 3"],
+    "taglineOrSlogan": "their ACTUAL tagline",
+    "whatTheyNeverSay": "specific strategic avoidance",
+    "tonalInconsistency": "specific contradiction in voice"
+  },
+  "spaceTheyOccupy": {
+    "perceivedTerrain": "specific territory in customer minds",
+    "emotionalRegisters": ["emotion1", "emotion2", "emotion3"],
+    "competitiveLandmark": "specific main competitor",
+    "brandArchetype": "specific archetype e.g. Caregiver"
+  },
+  "touchpoints": [
+    {"name": "Visual Identity", "rating": "strong", "note": "specific 10-word observation"},
+    {"name": "Website", "rating": "mixed", "note": "specific 10-word observation"},
+    {"name": "Social Media", "rating": "mixed", "note": "specific 10-word observation"},
+    {"name": "Messaging", "rating": "strong", "note": "specific 10-word observation"},
+    {"name": "Packaging / Product", "rating": "strong", "note": "specific 10-word observation"},
+    {"name": "Customer Experience", "rating": "strong", "note": "specific 10-word observation"}
+  ],
+  "contradictions": [
+    "specific brand contradiction 1",
+    "specific brand contradiction 2",
+    "specific brand contradiction 3"
+  ],
+  "workingWell": [
+    "specific thing working well 1",
+    "specific thing working well 2",
+    "specific thing working well 3"
+  ],
+  "workingAgainstItself": [
+    "specific self-defeating element 1",
+    "specific self-defeating element 2"
+  ],
+  "whiteSpace": {
+    "gapTitle": "5 words max punchy title",
+    "gapDescription": "2-3 sentences on the unclaimed territory — specific",
+    "howToOwn": "concrete actionable suggestion"
+  },
+  "verdictLine": "One devastating/insightful strategist line capturing the whole brand"
+}`;
+
+    const jsonPrompt = `You are a JSON formatter. Using ONLY the research brief below, populate the JSON schema provided. 
+
+CRITICAL RULES:
+- Output ONLY the JSON object. No text before it, no text after it, no explanation.
+- Your response must start with { and end with }
+- Every string value must be in double quotes
+- No trailing commas
+- Use the specific details from the research brief — not generalities
+- overallSignal, visual.overall, visual.consistency, verbal.overall, and all touchpoint ratings must be exactly one of: "strong", "mixed", or "weak"
+
+RESEARCH BRIEF:
+${researchBrief}
+
+JSON SCHEMA TO POPULATE:
+${jsonSchema}`;
+
+    const data2 = await callAPI([{ role: 'user', content: jsonPrompt }], false, 2500);
+    const jsonText = getText(data2);
+    const jsonStr = extractJSON(jsonText);
+
+    if (!jsonStr) throw new Error('Could not format analysis as JSON. Please try again.');
+
+    let result;
+    try {
+      result = JSON.parse(jsonStr);
+    } catch(parseErr) {
+      // Last resort: ask for a repair
+      const data3 = await callAPI([
+        { role: 'user', content: jsonPrompt },
+        { role: 'assistant', content: jsonText },
+        { role: 'user', content: 'The JSON is invalid. Fix any syntax errors — unquoted strings, trailing commas, broken values. Return ONLY the corrected JSON object starting with { and ending with }.' }
+      ], false, 2500);
+      const fixedStr = extractJSON(getText(data3));
+      if (!fixedStr) throw new Error('Analysis failed to parse. Please try again.');
+      result = JSON.parse(fixedStr);
     }
 
-    if (!jsonStr) throw new Error('Could not parse brand analysis. Please try again.');
-    const result = JSON.parse(jsonStr);
     addToHistory(brand);
     renderResults(result);
   } catch(e) {
