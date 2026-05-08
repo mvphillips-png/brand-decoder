@@ -841,6 +841,36 @@ function renderResults(d) {
       <div style="margin-top:12px; font-size:16px; color:var(--muted); line-height:1.6; font-style:italic;">"${escHtml(d.signalReason)}"</div>
     </div>
 
+    <!-- SUMMARY CARD -->
+    <div style="margin-bottom:16px; padding:20px 22px; background:rgba(255,255,255,0.04); border:1px solid rgba(167,139,250,0.18); border-radius:var(--radius-lg); backdrop-filter:blur(10px);">
+      <div style="font-size:11px; font-family:var(--font-mono); letter-spacing:1.5px; text-transform:uppercase; color:rgba(192,132,252,0.7); margin-bottom:14px;">At a Glance</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div style="background:rgba(0,0,0,0.2); border-radius:10px; padding:12px 14px; border:1px solid rgba(255,255,255,0.06);">
+          <div style="font-size:11px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:0.5px; color:rgba(126,184,255,0.7); margin-bottom:4px;">Category</div>
+          <div style="font-size:14px; color:#fff; line-height:1.4;">${escHtml(d.category || '')}</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.2); border-radius:10px; padding:12px 14px; border:1px solid rgba(255,255,255,0.06);">
+          <div style="font-size:11px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:0.5px; color:rgba(192,132,252,0.7); margin-bottom:4px;">Archetype</div>
+          <div style="font-size:14px; color:#fff; line-height:1.4;">${escHtml(d.spaceTheyOccupy?.brandArchetype || '')}</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.2); border-radius:10px; padding:12px 14px; border:1px solid rgba(255,255,255,0.06);">
+          <div style="font-size:11px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:0.5px; color:rgba(255,209,102,0.7); margin-bottom:4px;">Primary Competitor</div>
+          <div style="font-size:14px; color:#fff; line-height:1.4;">${escHtml(d.spaceTheyOccupy?.competitiveLandmark || '')}</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.2); border-radius:10px; padding:12px 14px; border:1px solid rgba(255,255,255,0.06);">
+          <div style="font-size:11px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:0.5px; color:rgba(94,255,160,0.7); margin-bottom:4px;">Core Territory</div>
+          <div style="font-size:14px; color:#fff; line-height:1.4;">${escHtml(d.spaceTheyOccupy?.perceivedTerrain || '')}</div>
+        </div>
+      </div>
+      <div style="margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06);">
+        <div style="font-size:11px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:0.5px; color:rgba(255,255,255,0.4); margin-bottom:6px;">What They Do</div>
+        <div style="font-size:15px; color:rgba(255,255,255,0.85); line-height:1.6;">${escHtml(d.what?.positioningStatement || '')}</div>
+      </div>
+      <div style="margin-top:10px; display:flex; flex-wrap:wrap; gap:6px;">
+        ${(d.spaceTheyOccupy?.emotionalRegisters || []).map(e => `<span style="background:rgba(192,132,252,0.1);border:1px solid rgba(192,132,252,0.25);border-radius:100px;padding:4px 12px;font-size:12px;color:#c084fc;font-family:var(--font-mono)">${escHtml(e)}</span>`).join('')}
+      </div>
+    </div>
+
     <!-- THE GAP — featured first -->
     <div class="gap-card">
       <div class="gap-label">⬡ White Space Opportunity</div>
