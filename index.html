@@ -598,35 +598,12 @@
 
 <script>
 const STORAGE_KEY = 'bd_api_key';
-const HISTORY_KEY = 'bd_history';
 
 
 
-function init() {
-  loadHistory();
-}
+function init() {}
 
-function loadHistory() {
-  const h = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-  const strip = document.getElementById('historyStrip');
-  if (h.length === 0) { strip.style.display = 'none'; return; }
-  strip.style.display = 'flex';
-  strip.innerHTML = h.slice(0, 8).map(name =>
-    `<div class="history-chip" onclick="quickLoad('${name.replace(/'/g,"\\'")}')">↺ ${name}</div>`
-  ).join('');
-}
 
-function quickLoad(name) {
-  document.getElementById('brandInput').value = name;
-  runDecode();
-}
-
-function addToHistory(name) {
-  let h = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-  h = [name, ...h.filter(n => n !== name)].slice(0, 10);
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
-  loadHistory();
-}
 
 function setLoading(on, brand) {
   document.getElementById('loadingZone').classList.toggle('active', on);
@@ -751,7 +728,6 @@ async function runDecode() {
 
     const fixed = fixJSON(jsonStr);
     const result = JSON.parse(fixed);
-    addToHistory(brand);
     renderResults(result);
   } catch(e) {
     showError('Error: ' + e.message);
