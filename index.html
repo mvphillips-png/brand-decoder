@@ -659,7 +659,7 @@ function setLoading(on, brand) {
   document.getElementById('loadingZone').classList.toggle('active', on);
   document.getElementById('decodeBtn').disabled = on;
   if (brand) document.getElementById('loadingBrand').textContent = brand;
-  const msgs = ['Mapping brand space', 'Scanning visual identity', 'Decoding messaging', 'Finding the gap', 'Analyzing touch points'];
+  const msgs = ['Searching brand assets', 'Scanning visual identity', 'Decoding messaging & tone', 'Finding the gap', 'Analyzing touch points', 'Cross-referencing research'];
   if (on) {
     let i = 0;
     window._loadInterval = setInterval(() => {
@@ -689,9 +689,17 @@ async function runDecode() {
   document.getElementById('resultsZone').innerHTML = '';
   setLoading(true, brand);
 
-  const systemPrompt = `You are a senior brand strategist and creative director. You produce incisive, opinionated brand analysis. You decode brands with the precision of a strategist and the eye of a creative director. You are direct, insightful, and non-generic. You find what others miss.`;
+  const systemPrompt = `You are a senior brand strategist and creative director with deep visual literacy. Before analyzing any brand, you use web search to look up the brand's current website, brand guidelines, logo, color palette, typography, and recent campaigns. You cite specific, real details — actual hex colors, real font names, specific campaign names, real taglines. You NEVER give generic answers like "they use bold colors" or "clean sans-serif typography." Every visual observation must be specific and grounded in what the brand actually looks like right now. You are direct, opinionated, and find what others miss.`;
 
-  const userPrompt = `Decode the brand: "${brand}"${context ? `\n\nContext from analyst: ${context}` : ''}
+  const userPrompt = `You have web search available. Before writing your analysis, search for:
+1. "${brand} brand colors hex" or "${brand} brand guidelines"
+2. "${brand} logo typography font"
+3. "${brand} website 2025" or "${brand} brand identity"
+4. "${brand} tagline slogan"
+
+Use what you find to give SPECIFIC, ACCURATE visual details — real color names/hex codes, actual font names, real campaign names. Do not guess or generalize.${context ? '\n\nAnalyst context: ' + context : ''}
+
+Decode the brand: "${brand}"
 
 Return ONLY valid JSON — no markdown fences, no commentary before or after. Use this exact structure:
 
@@ -765,8 +773,9 @@ Return ONLY valid JSON — no markdown fences, no commentary before or after. Us
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 2000,
+        max_tokens: 3000,
         system: systemPrompt,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{ role: 'user', content: userPrompt }]
       })
     });
@@ -777,9 +786,14 @@ Return ONLY valid JSON — no markdown fences, no commentary before or after. Us
     }
 
     const data = await resp.json();
-    const raw = data.content?.[0]?.text || '';
-    const clean = raw.replace(/```json|```/g, '').trim();
-    const result = JSON.parse(clean);
+    // Web search returns multiple content blocks; find the last text block with JSON
+    const textBlocks = (data.content || []).filter(b => b.type === 'text');
+    const raw = textBlocks.map(b => b.text).join('');
+    const clean = raw.replace(/```json[\s\S]*?```/g, m => m.slice(7, -3)).replace(/```/g, '').trim();
+    // Extract JSON object from response
+    const jsonMatch = clean.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No valid JSON in response. Try again.');
+    const result = JSON.parse(jsonMatch[0]);
     addToHistory(brand);
     renderResults(result);
   } catch(e) {
