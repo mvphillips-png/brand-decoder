@@ -46,11 +46,11 @@
 
   /* ── HEADER ── */
   .app-header {
-    padding: 24px 20px 16px;
+    padding: 20px 20px 16px;
     border-bottom: 0.5px solid var(--border);
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     position: sticky;
     top: 0;
     background: var(--bg);
@@ -58,15 +58,34 @@
     backdrop-filter: blur(12px);
   }
   .logo-mark {
-    width: 36px; height: 36px;
-    background: var(--accent);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
+    width: 52px; height: 52px;
     flex-shrink: 0;
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
   }
-  .logo-mark svg { width: 20px; height: 20px; }
-  .app-title { font-size: 19px; font-weight: 800; letter-spacing: -0.3px; color: var(--text); }
-  .app-sub { font-size: 12px; color: var(--muted); font-weight: 400; letter-spacing: 0.5px; text-transform: uppercase; font-family: var(--font-mono); }
+  .logo-mark svg { width: 52px; height: 52px; }
+  .app-title {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #fff 0%, #a8edff 40%, #00c6ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+  }
+  .app-sub {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-family: var(--font-mono);
+    background: linear-gradient(90deg, #f9ca57, #ff6b35);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-top: 2px;
+  }
 
   /* ── MAIN ── */
   .main { padding: 24px 20px; max-width: 600px; margin: 0 auto; }
@@ -495,14 +514,41 @@
 
 <header class="app-header">
   <div class="logo-mark">
-    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M10 2L3 7V13L10 18L17 13V7L10 2Z" stroke="#0c0c0e" stroke-width="1.5" fill="none"/>
-      <path d="M10 6V14M6 8L14 12M14 8L6 12" stroke="#0c0c0e" stroke-width="1.5" stroke-linecap="round"/>
+    <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="bgGrad" cx="50%" cy="40%" r="55%">
+          <stop offset="0%" stop-color="#1a3a6e"/>
+          <stop offset="100%" stop-color="#0a1628"/>
+        </radialGradient>
+        <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#00d4ff"/>
+          <stop offset="50%" stop-color="#0090ff"/>
+          <stop offset="100%" stop-color="#7b2fff"/>
+        </linearGradient>
+        <linearGradient id="boltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ffe55c"/>
+          <stop offset="100%" stop-color="#ff9a1f"/>
+        </linearGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="1.5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <!-- Shield base -->
+      <path d="M26 3L6 11V27C6 37.5 15 45.5 26 49C37 45.5 46 37.5 46 27V11L26 3Z" fill="url(#bgGrad)" stroke="url(#ringGrad)" stroke-width="2"/>
+      <!-- Inner shield ring -->
+      <path d="M26 8L10 15V27C10 35.5 17.5 42 26 45C34.5 42 42 35.5 42 27V15L26 8Z" fill="none" stroke="url(#ringGrad)" stroke-width="0.8" opacity="0.4"/>
+      <!-- Lightning bolt / B shape - decode symbol -->
+      <g filter="url(#glow)">
+        <path d="M23 14L17 27H25L21 38L35 23H26L30 14Z" fill="url(#boltGrad)" stroke="#fff" stroke-width="0.4" stroke-linejoin="round"/>
+      </g>
+      <!-- Shine -->
+      <path d="M26 3L6 11V18C10 15 18 12 26 11C34 12 42 15 46 18V11L26 3Z" fill="white" opacity="0.06"/>
     </svg>
   </div>
   <div>
     <div class="app-title">Brand Decoder</div>
-    <div class="app-sub">Find the gap</div>
+    <div class="app-sub">⚡ Find the gap</div>
   </div>
 </header>
 
@@ -510,6 +556,32 @@
 
   <!-- History chips (hidden initially) -->
   <div class="history-strip" id="historyStrip" style="display:none"></div>
+
+
+  <!-- About Block -->
+  <div style="margin-bottom:24px; padding:20px; background:var(--surface); border:0.5px solid var(--border); border-radius:var(--radius-lg);">
+    <div style="font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase; font-family:var(--font-mono); color:var(--accent2); margin-bottom:12px;">What This Does</div>
+    <p style="font-size:16px; line-height:1.7; color:var(--text); margin-bottom:14px;">Brand Decoder is a strategic analysis tool. Enter any company name and it maps out how the brand presents itself — visually and verbally — then identifies the white space a challenger or evolved version of that brand could own.</p>
+    <div style="font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase; font-family:var(--font-mono); color:var(--accent2); margin-bottom:10px;">How to Use It Well</div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; gap:10px; align-items:flex-start;">
+        <span style="color:var(--accent); font-family:var(--font-mono); font-size:13px; flex-shrink:0; margin-top:2px;">01</span>
+        <span style="font-size:15px; line-height:1.6; color:var(--text);">Type a brand name — any company, big or small. The more well-known, the richer the analysis.</span>
+      </div>
+      <div style="display:flex; gap:10px; align-items:flex-start;">
+        <span style="color:var(--accent); font-family:var(--font-mono); font-size:13px; flex-shrink:0; margin-top:2px;">02</span>
+        <span style="font-size:15px; line-height:1.6; color:var(--text);">Use the optional context field to sharpen the lens — add a competitor, an industry, or the angle you care about most.</span>
+      </div>
+      <div style="display:flex; gap:10px; align-items:flex-start;">
+        <span style="color:var(--accent); font-family:var(--font-mono); font-size:13px; flex-shrink:0; margin-top:2px;">03</span>
+        <span style="font-size:15px; line-height:1.6; color:var(--text);">Read the White Space section first — that's the gap. Everything else is the evidence behind it.</span>
+      </div>
+      <div style="display:flex; gap:10px; align-items:flex-start;">
+        <span style="color:var(--accent); font-family:var(--font-mono); font-size:13px; flex-shrink:0; margin-top:2px;">04</span>
+        <span style="font-size:15px; line-height:1.6; color:var(--text);">Use the Save button to export a plain-text report you can paste into a brief, deck, or strategy doc.</span>
+      </div>
+    </div>
+  </div>
 
   <!-- Input Zone -->
   <div class="input-zone">
