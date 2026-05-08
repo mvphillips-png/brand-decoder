@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Brand Decoder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -606,9 +608,12 @@ function init() {}
 
 
 function setLoading(on, brand) {
-  document.getElementById('loadingZone').classList.toggle('active', on);
-  document.getElementById('decodeBtn').disabled = on;
-  if (brand) document.getElementById('loadingBrand').textContent = brand;
+  const lz = document.getElementById('loadingZone');
+  const db = document.getElementById('decodeBtn');
+  const lb = document.getElementById('loadingBrand');
+  if (lz) lz.classList.toggle('active', on);
+  if (db) db.disabled = on;
+  if (brand && lb) lb.textContent = brand;
   const msgs = ['Searching brand assets', 'Scanning visual identity', 'Decoding messaging & tone', 'Finding the gap', 'Analyzing touch points', 'Cross-referencing research'];
   if (on) {
     let i = 0;
@@ -623,6 +628,7 @@ function setLoading(on, brand) {
 
 function showError(msg) {
   const el = document.getElementById('errorZone');
+  if (!el) { console.error('Brand Decoder error:', msg); return; }
   el.textContent = msg;
   el.classList.add('active');
 }
@@ -751,7 +757,7 @@ function dotColor(r) {
 
 function renderResults(d) {
   const zone = document.getElementById('resultsZone');
-
+  if (!zone) { console.error('resultsZone not found'); return; }
   zone.innerHTML = `
     <!-- Brand Header -->
     <div class="brand-header-result">
@@ -909,11 +915,12 @@ function escHtml(s) {
 }
 
 function decodeAnother() {
-  document.getElementById('brandInput').value = '';
-  document.getElementById('contextInput').value = '';
-  document.getElementById('resultsZone').classList.remove('active');
-  document.getElementById('resultsZone').innerHTML = '';
-  document.getElementById('brandInput').focus();
+  const bi = document.getElementById('brandInput');
+  const ci = document.getElementById('contextInput');
+  const rz = document.getElementById('resultsZone');
+  if (bi) { bi.value = ''; bi.focus(); }
+  if (ci) ci.value = '';
+  if (rz) { rz.classList.remove('active'); rz.innerHTML = ''; }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
