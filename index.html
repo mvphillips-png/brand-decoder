@@ -767,33 +767,60 @@ Return ONLY valid JSON — no markdown fences, no commentary before or after. Us
   "verdictLine": "One final devastating/insightful line about this brand — the thing a great strategist would say that captures it all"
 }`;
 
-  try {
+  async function callAPI(messages, useSearch) {
+    const body = {
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 3000,
+      system: systemPrompt,
+      messages
+    };
+    if (useSearch) body.tools = [{ type: 'web_search_20250305', name: 'web_search' }];
     const resp = await fetch('https://gravificer-proxy.mvphillips.workers.dev/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 3000,
-        system: systemPrompt,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        messages: [{ role: 'user', content: userPrompt }]
-      })
+      body: JSON.stringify(body)
     });
-
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
       throw new Error(err.error?.message || `API error ${resp.status}`);
     }
+    return resp.json();
+  }
 
-    const data = await resp.json();
-    // Web search returns multiple content blocks; find the last text block with JSON
+  function extractJSON(data) {
+    // Collect all text blocks (web search may interleave tool_use blocks)
     const textBlocks = (data.content || []).filter(b => b.type === 'text');
-    const raw = textBlocks.map(b => b.text).join('');
-    const clean = raw.replace(/```json[\s\S]*?```/g, m => m.slice(7, -3)).replace(/```/g, '').trim();
-    // Extract JSON object from response
-    const jsonMatch = clean.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('No valid JSON in response. Try again.');
-    const result = JSON.parse(jsonMatch[0]);
+    const raw = textBlocks.map(b => b.text).join('\n');
+    // Strip markdown code fences
+    const stripped = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+    // Find the outermost { ... } — handles trailing text after JSON
+    let depth = 0, start = -1, end = -1;
+    for (let i = 0; i < stripped.length; i++) {
+      if (stripped[i] === '{') { if (start === -1) start = i; depth++; }
+      else if (stripped[i] === '}') { depth--; if (depth === 0 && start !== -1) { end = i; break; } }
+    }
+    if (start === -1 || end === -1) return null;
+    return stripped.slice(start, end + 1);
+  }
+
+  try {
+    // Pass 1: web search enabled for research
+    const data1 = await callAPI([{ role: 'user', content: userPrompt }], true);
+    let jsonStr = extractJSON(data1);
+
+    // Pass 2: if no clean JSON, send a strict cleanup request
+    if (!jsonStr) {
+      const rawText = (data1.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+      const data2 = await callAPI([
+        { role: 'user', content: userPrompt },
+        { role: 'assistant', content: data1.content },
+        { role: 'user', content: 'Your response contained text outside the JSON object. Return ONLY the raw JSON object — no explanation, no markdown, no text before or after. Start your response with { and end with }.' }
+      ], false);
+      jsonStr = extractJSON(data2);
+    }
+
+    if (!jsonStr) throw new Error('Could not parse brand analysis. Please try again.');
+    const result = JSON.parse(jsonStr);
     addToHistory(brand);
     renderResults(result);
   } catch(e) {
