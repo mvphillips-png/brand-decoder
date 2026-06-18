@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Brand Decoder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -39,6 +39,7 @@
     --radius: 14px;
     --radius-lg: 20px;
     --font-head: 'Syne', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     --font-mono: 'DM Mono', 'SF Mono', Menlo, monospace;
     --glow-purple: 0 0 30px rgba(168,85,247,0.3), 0 0 60px rgba(168,85,247,0.1);
     --glow-gold: 0 0 20px rgba(249,202,87,0.4);
@@ -402,7 +403,7 @@
   .dot-amber { background: var(--warn); box-shadow: 0 0 6px rgba(255,209,102,0.5); }
   .dot-blue { background: var(--blue); box-shadow: 0 0 6px rgba(126,184,255,0.5); }
   .dot-accent { background: var(--accent); box-shadow: 0 0 6px rgba(249,202,87,0.5); }
-  .signal-text { font-size: 16px; line-height: 1.65; color: var(--text); }
+  .signal-text { font-size: 16px; line-height: 1.7; color: var(--text); font-family: var(--font-body); padding-bottom: 1px; }
   .signal-label {
     font-size: 12px;
     font-family: var(--font-mono);
@@ -457,7 +458,7 @@
     background-clip: text;
     display: inline;
   }
-  .gap-desc { font-size: 16px; color: rgba(255,255,255,0.9); line-height: 1.7; }
+  .gap-desc { font-size: 16px; color: rgba(255,255,255,0.9); line-height: 1.75; font-family: var(--font-body); padding-bottom: 1px; }
 
   /* ── TOUCHPOINT GRID ── */
   .touchpoint-grid {
@@ -504,7 +505,7 @@
     margin: 14px 0;
     box-shadow: inset 0 0 20px rgba(249,202,87,0.05);
   }
-  .quote-text { font-size: 16px; color: var(--text); line-height: 1.7; font-style: italic; }
+  .quote-text { font-size: 16px; color: var(--text); line-height: 1.75; font-style: italic; font-family: var(--font-body); padding-bottom: 1px; }
   .quote-attr { font-size: 13px; color: var(--muted); font-family: var(--font-mono); margin-top: 6px; }
 
   /* ── ACTIONS ── */
@@ -620,24 +621,24 @@
   <!-- About Block -->
   <div style="margin-bottom:24px; padding:22px; background:rgba(255,255,255,0.05); border:1px solid rgba(167,139,250,0.2); border-radius:var(--radius-lg); backdrop-filter:blur(10px); box-shadow:0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07);">
     <div style="font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase; font-family:var(--font-mono); color:var(--accent2); margin-bottom:12px;">What This Does</div>
-    <p style="font-size:16px; line-height:1.8; color:var(--text); margin-bottom:14px;">Brand Decoder is a strategic analysis tool. Enter any company name and it maps out how the brand presents itself — visually and verbally — then identifies the white space a challenger or evolved version of that brand could own.</p>
+    <p style="font-size:16px; line-height:1.8; color:var(--text); margin-bottom:14px; font-family:var(--font-body);">Brand Decoder is a strategic analysis tool. Enter any company name and it maps out how the brand presents itself — visually and verbally — then identifies the white space a challenger or evolved version of that brand could own.</p>
     <div style="font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase; font-family:var(--font-mono); color:var(--accent2); margin-bottom:10px;">How to Use It Well</div>
     <div style="display:flex; flex-direction:column; gap:8px;">
       <div style="display:flex; gap:10px; align-items:flex-start;">
         <span style="color:var(--accent); font-family:var(--font-mono); font-size:13px; flex-shrink:0; margin-top:2px;">01</span>
-        <span style="font-size:15px; line-height:1.6; color:var(--text);">Type a brand name — any company, big or small. The more well-known, the richer the analysis.</span>
+        <span style="font-size:15px; line-height:1.75; color:var(--text); font-family:var(--font-body); padding-bottom:1px;">Type a brand name — any company, big or small. The more well-known, the richer the analysis.</span>
       </div>
       <div style="display:flex; gap:10px; align-items:flex-start;">
         <span style="color:var(--accent); font-family:var(--font-mono); font-size:13px; flex-shrink:0; margin-top:2px;">02</span>
-        <span style="font-size:15px; line-height:1.6; color:var(--text);">Use the optional context field to sharpen the lens — add a competitor, an industry, or the angle you care about most.</span>
+        <span style="font-size:15px; line-height:1.75; color:var(--text); font-family:var(--font-body); padding-bottom:1px;">Use the optional context field to sharpen the lens — add a competitor, an industry, or the angle you care about most.</span>
       </div>
       <div style="display:flex; gap:10px; align-items:flex-start;">
         <span style="color:var(--accent); font-family:var(--font-mono); font-size:13px; flex-shrink:0; margin-top:2px;">03</span>
-        <span style="font-size:15px; line-height:1.6; color:var(--text);">Read the White Space section first — that's the gap. Everything else is the evidence behind it.</span>
+        <span style="font-size:15px; line-height:1.75; color:var(--text); font-family:var(--font-body); padding-bottom:1px;">Read the White Space section first — that's the gap. Everything else is the evidence behind it.</span>
       </div>
       <div style="display:flex; gap:10px; align-items:flex-start;">
         <span style="color:var(--accent); font-family:var(--font-mono); font-size:13px; flex-shrink:0; margin-top:2px;">04</span>
-        <span style="font-size:15px; line-height:1.6; color:var(--text);">Use the Save button to export a plain-text report you can paste into a brief, deck, or strategy doc.</span>
+        <span style="font-size:15px; line-height:1.75; color:var(--text); font-family:var(--font-body); padding-bottom:1px;">Use the Save button to export a plain-text report you can paste into a brief, deck, or strategy doc.</span>
       </div>
     </div>
   </div>
@@ -894,7 +895,7 @@ function renderResults(d) {
         <span class="score-pill ${ratingClass(d.overallSignal)}">${d.overallSignal.toUpperCase()} BRAND</span>
         <span class="score-pill neutral">${escHtml(d.spaceTheyOccupy?.brandArchetype || '')}</span>
       </div>
-      <div style="margin-top:12px; font-size:16px; color:var(--muted); line-height:1.6; font-style:italic;">"${escHtml(d.signalReason)}"</div>
+      <div style="margin-top:12px; font-size:16px; color:var(--muted); line-height:1.7; font-style:italic; font-family:var(--font-body); padding-bottom:1px;">"${escHtml(d.signalReason)}"</div>
     </div>
 
     <!-- SUMMARY CARD -->
@@ -992,7 +993,7 @@ function renderResults(d) {
         <div class="signal-item"><div class="signal-dot dot-blue"></div><div><div class="signal-label">Tone</div><div class="signal-text">${escHtml(d.verbal?.tone || '')}</div></div></div>
         <div style="margin-bottom:12px">
           <div class="signal-label">Dominant Messages</div>
-          ${(d.verbal?.dominantMessages || []).map((m,i) => `<div style="display:flex;gap:8px;align-items:flex-start;margin-top:6px"><div style="color:rgba(255,255,255,0.5);font-family:var(--font-mono);font-size:14px;flex-shrink:0;margin-top:1px">${i+1}.</div><div style="font-size:16px;line-height:1.6">${escHtml(m)}</div></div>`).join('')}
+          ${(d.verbal?.dominantMessages || []).map((m,i) => `<div style="display:flex;gap:8px;align-items:flex-start;margin-top:6px"><div style="color:rgba(255,255,255,0.5);font-family:var(--font-mono);font-size:14px;flex-shrink:0;margin-top:1px">${i+1}.</div><div style="font-size:16px;line-height:1.75;font-family:var(--font-body);padding-bottom:1px">${escHtml(m)}</div></div>`).join('')}
         </div>
         ${d.verbal?.taglineOrSlogan ? `<div class="quote-block"><div class="quote-text">${escHtml(d.verbal.taglineOrSlogan)}</div><div class="quote-attr">TAGLINE / HOW THEY SUMMARIZE THEMSELVES</div></div>` : ''}
         <div class="signal-item" style="margin-top:12px"><div class="signal-dot dot-amber"></div><div><div class="signal-label">What They Never Say</div><div class="signal-text">${escHtml(d.verbal?.whatTheyNeverSay || '')}</div></div></div>
@@ -1051,7 +1052,7 @@ function renderResults(d) {
     <!-- Verdict -->
     <div style="margin-top:20px; padding:22px; background:linear-gradient(135deg,rgba(168,85,247,0.12),rgba(244,114,182,0.08)); border:1px solid rgba(192,132,252,0.3); border-radius:var(--radius-lg); margin-bottom:4px; box-shadow:0 0 30px rgba(168,85,247,0.15);">
       <div class="signal-label" style="margin-bottom:8px">Strategist's Verdict</div>
-      <div style="font-size:19px; font-weight:600; line-height:1.6; color:var(--text); letter-spacing:-0.2px;">"${escHtml(d.verdictLine)}"</div>
+      <div style="font-size:19px; font-weight:600; line-height:1.7; color:var(--text); letter-spacing:-0.2px; font-family:var(--font-body); padding-bottom:2px;">"${escHtml(d.verdictLine)}"</div>
     </div>
 
     <!-- Actions -->
