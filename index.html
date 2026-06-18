@@ -38,8 +38,8 @@
     --pink-dim: rgba(244,114,182,0.15);
     --radius: 14px;
     --radius-lg: 20px;
-    --font-head: 'Syne', sans-serif;
-    --font-mono: 'DM Mono', monospace;
+    --font-head: 'Syne', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --font-mono: 'DM Mono', 'SF Mono', Menlo, monospace;
     --glow-purple: 0 0 30px rgba(168,85,247,0.3), 0 0 60px rgba(168,85,247,0.1);
     --glow-gold: 0 0 20px rgba(249,202,87,0.4);
   }
@@ -620,7 +620,7 @@
   <!-- About Block -->
   <div style="margin-bottom:24px; padding:22px; background:rgba(255,255,255,0.05); border:1px solid rgba(167,139,250,0.2); border-radius:var(--radius-lg); backdrop-filter:blur(10px); box-shadow:0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07);">
     <div style="font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase; font-family:var(--font-mono); color:var(--accent2); margin-bottom:12px;">What This Does</div>
-    <p style="font-size:16px; line-height:1.7; color:var(--text); margin-bottom:14px;">Brand Decoder is a strategic analysis tool. Enter any company name and it maps out how the brand presents itself — visually and verbally — then identifies the white space a challenger or evolved version of that brand could own.</p>
+    <p style="font-size:16px; line-height:1.8; color:var(--text); margin-bottom:14px;">Brand Decoder is a strategic analysis tool. Enter any company name and it maps out how the brand presents itself — visually and verbally — then identifies the white space a challenger or evolved version of that brand could own.</p>
     <div style="font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase; font-family:var(--font-mono); color:var(--accent2); margin-bottom:10px;">How to Use It Well</div>
     <div style="display:flex; flex-direction:column; gap:8px;">
       <div style="display:flex; gap:10px; align-items:flex-start;">
@@ -740,9 +740,7 @@ async function runDecode() {
   }
 
   function fixJSON(str) {
-    // Try as-is first
     try { JSON.parse(str); return str; } catch(e) {}
-    // Replace curly/smart quotes with straight equivalents
     let s = str
       .replace(/\u2018|\u2019/g, "'")
       .replace(/\u201C|\u201D/g, '"')
@@ -752,15 +750,38 @@ async function runDecode() {
     return s;
   }
 
+  async function callAPI(messages, useSearch, maxTokens) {
+    const body = {
+      model: 'claude-sonnet-4-6',
+      max_tokens: maxTokens || 2000,
+      messages
+    };
+    if (useSearch) body.tools = [{ type: 'web_search_20250305', name: 'web_search' }];
+    const resp = await fetch('https://gravificer-proxy.mvphillips.workers.dev/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error?.message || ('API error ' + resp.status));
+    }
+    return resp.json();
+  }
+
+  function getText(data) {
+    return (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+  }
+
   const schema = '{'
     + '"brand":"' + brand + '",'
-    + '"category":"specific one-line category e.g. Outdoor gear retailer and co-op",'
+    + '"category":"specific one-line category, e.g. industry + sub-segment + geography",'
     + '"overallSignal":"strong",'
-    + '"signalReason":"one sharp sentence specific to this brand",'
+    + '"signalReason":"one sharp, specific sentence on overall brand health",'
     + '"what":{"coreOffering":"specific","positioningStatement":"specific","audienceThey claim":"specific","audienceTheyActuallyReach":"specific"},'
-    + '"visual":{"overall":"strong","palette":"Name exact colors with hex codes e.g. Strathmore Green #5E8F32 and white","typography":"Name actual typefaces e.g. Custom condensed wordmark Gotham body","imagery":"specific photo style and subjects","consistency":"strong","standoutElement":"single most distinctive element","weakness":"specific visual weakness"},'
-    + '"verbal":{"overall":"strong","tone":"3-4 specific adjectives","dominantMessages":["real message","real message","real message"],"taglineOrSlogan":"Their actual tagline","whatTheyNeverSay":"specific strategic avoidance","tonalInconsistency":"specific voice contradiction"},'
-    + '"spaceTheyOccupy":{"perceivedTerrain":"specific territory in customer minds","emotionalRegisters":["emotion","emotion","emotion"],"competitiveLandmark":"primary competitor","brandArchetype":"e.g. Caregiver"},'
+    + '"visual":{"overall":"strong","palette":"name exact colors with hex codes if known","typography":"name actual typefaces if known, else describe style precisely","imagery":"specific photo/illustration style and subjects","consistency":"strong","standoutElement":"single most distinctive visual element","weakness":"specific visual weakness"},'
+    + '"verbal":{"overall":"strong","tone":"3-4 specific adjectives","dominantMessages":["real recurring message","real recurring message","real recurring message"],"taglineOrSlogan":"their actual current tagline if one exists, else how they summarize themselves","whatTheyNeverSay":"specific strategic avoidance","tonalInconsistency":"specific voice contradiction"},'
+    + '"spaceTheyOccupy":{"perceivedTerrain":"specific territory in customer minds","emotionalRegisters":["emotion","emotion","emotion"],"competitiveLandmark":"primary real competitor","brandArchetype":"e.g. Caregiver, Outlaw, Sage, etc"},'
     + '"touchpoints":['
     +   '{"name":"Visual Identity","rating":"strong","note":"specific under 12 words"},'
     +   '{"name":"Website","rating":"mixed","note":"specific under 12 words"},'
@@ -772,52 +793,74 @@ async function runDecode() {
     + '"contradictions":["specific contradiction","specific contradiction","specific contradiction"],'
     + '"workingWell":["specific strength","specific strength","specific strength"],'
     + '"workingAgainstItself":["specific weakness","specific weakness"],'
-    + '"whiteSpace":{"gapTitle":"5 words max","gapDescription":"2-3 sentences on unclaimed territory","howToOwn":"concrete suggestion"},'
-    + '"verdictLine":"one devastating strategist line"'
+    + '"whiteSpace":{"gapTitle":"5 words max, punchy and specific to this brand","gapDescription":"2-3 sentences on unclaimed territory — name the actual unclaimed audience, emotion, or positioning","howToOwn":"one concrete, actionable suggestion"},'
+    + '"verdictLine":"one sharp, memorable strategist line that captures the whole brand — must be specific to this brand, not generic"'
     + '}';
 
-  const userMsg = 'You are a senior brand strategist. Analyze the brand: "' + brand + '"'
-    + (context ? '. Additional context: ' + context : '') + '.\n\n'
-    + 'Use your knowledge to provide SPECIFIC details:\n'
-    + '- Exact hex color codes (not just color names)\n'
-    + '- Actual font/typeface names used in their identity\n'
-    + '- Real current tagline\n'
-    + '- Sharp, specific strategic observations\n\n'
-    + 'OUTPUT RULES — follow exactly:\n'
-    + '1. Your entire response is ONE JSON object only\n'
-    + '2. No text before the opening brace\n'
-    + '3. No text after the closing brace\n'
-    + '4. No markdown, no code fences, no explanation\n'
-    + '5. All rating fields must be exactly: "strong", "mixed", or "weak"\n'
-    + '6. Every value must be a properly quoted JSON string or array\n\n'
-    + 'Use this exact schema, replacing placeholder text with real analysis:\n'
-    + schema;
-
   try {
-    const resp = await fetch('https://gravificer-proxy.mvphillips.workers.dev/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 2500,
-        messages: [{ role: 'user', content: userMsg }]
-      })
-    });
+    const researchPrompt = 'You are a senior brand researcher with sharp creative instincts. Research the brand "' + brand + '"'
+      + (context ? ' (context from analyst: ' + context + ')' : '') + '.\n\n'
+      + 'Use web search to find real, current, specific information:\n'
+      + '- Their actual website, current visual identity, logo, color palette (hex if findable)\n'
+      + '- Real typefaces or font style used in their branding\n'
+      + '- Their actual current tagline or how they describe themselves\n'
+      + '- Recent campaigns, news, or market positioning moves\n'
+      + '- Who their real competitors are and how this brand differs\n\n'
+      + 'Then write a sharp, opinionated research brief covering:\n'
+      + '1. WHAT THEY ACTUALLY DO — core offering, real positioning, claimed vs actual audience\n'
+      + '2. VISUAL IDENTITY — exact colors/hex, fonts, imagery style, what is distinctive, where it breaks down\n'
+      + '3. VERBAL IDENTITY — real tone, real recurring messages, real tagline, what they avoid saying, voice contradictions\n'
+      + '4. MARKET POSITION — territory they own in customer minds, emotional registers, real main competitor, brand archetype\n'
+      + '5. TOUCHPOINTS — quick read on visual identity, website, social, messaging, packaging/product, customer experience\n'
+      + '6. BRAND HEALTH — specific contradictions baked into the brand, what is genuinely working, what is self-defeating\n'
+      + '7. WHITE SPACE — the single most interesting, specific, creative gap a sharp challenger brand could exploit. Avoid generic answers like "be more authentic" — name an actual unclaimed audience, regional angle, emotional territory, or use case competitors are ignoring.\n\n'
+      + 'Be specific and creative. Avoid generic descriptions. If you cannot verify a specific fact via search, reason from strong general knowledge but flag it as inferred rather than stating it as fact.';
 
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      throw new Error(err.error?.message || 'API error ' + resp.status);
+    const data1 = await callAPI([{ role: 'user', content: researchPrompt }], true, 2200);
+    const researchBrief = getText(data1);
+    if (!researchBrief) throw new Error('Research pass returned no content. Please try again.');
+
+    const jsonPrompt = 'You are a precise JSON formatter. Using ONLY the research brief below, populate the JSON schema.\n\n'
+      + 'CRITICAL RULES:\n'
+      + '- Output ONLY the JSON object. No text before it, no text after it, no explanation, no markdown fences.\n'
+      + '- Your response must start with { and end with }\n'
+      + '- Every string value must be valid, properly double-quoted JSON\n'
+      + '- No trailing commas\n'
+      + '- Use the SPECIFIC details from the research brief — real colors, real fonts, real competitor names, real tagline. Do not invent details not in the brief, but do not water them down into generic statements either.\n'
+      + '- overallSignal, visual.overall, visual.consistency, verbal.overall must each be exactly one of: "strong", "mixed", or "weak"\n'
+      + '- Each touchpoint rating must be exactly one of: "strong", "mixed", or "weak"\n'
+      + '- whiteSpace must reflect the single sharpest, most creative gap from the brief — not a generic platitude\n\n'
+      + 'RESEARCH BRIEF:\n' + researchBrief + '\n\n'
+      + 'JSON SCHEMA TO POPULATE:\n' + schema;
+
+    const data2 = await callAPI([{ role: 'user', content: jsonPrompt }], false, 2600);
+    const jsonText = getText(data2);
+    let jsonStr = extractJSON(jsonText);
+
+    if (!jsonStr) {
+      const data2b = await callAPI([
+        { role: 'user', content: jsonPrompt },
+        { role: 'assistant', content: jsonText || '...' },
+        { role: 'user', content: 'Your response must be ONLY the JSON object. Start with { end with }. No other text.' }
+      ], false, 2600);
+      jsonStr = extractJSON(getText(data2b));
+    }
+    if (!jsonStr) throw new Error('Could not format analysis as JSON. Please try again.');
+
+    let result;
+    try {
+      result = JSON.parse(fixJSON(jsonStr));
+    } catch(parseErr) {
+      const data3 = await callAPI([
+        { role: 'user', content: jsonPrompt },
+        { role: 'assistant', content: jsonStr },
+        { role: 'user', content: 'The JSON is invalid. Fix any syntax errors — unquoted strings, trailing commas, broken values. Return ONLY the corrected JSON object starting with { and ending with }.' }
+      ], false, 2600);
+      const fixedStr = extractJSON(getText(data3));
+      if (!fixedStr) throw new Error('Analysis failed to parse. Please try again.');
+      result = JSON.parse(fixJSON(fixedStr));
     }
 
-    const data = await resp.json();
-    const raw = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
-    if (!raw) throw new Error('Empty response from API. Please try again.');
-
-    const jsonStr = extractJSON(raw);
-    if (!jsonStr) throw new Error('Could not find JSON in response. Please try again.');
-
-    const fixed = fixJSON(jsonStr);
-    const result = JSON.parse(fixed);
     renderResults(result);
   } catch(e) {
     showError('Error: ' + e.message);
